@@ -134,7 +134,7 @@
 
   .table-wrap {
     overflow-x: auto;
-    border-radius: 12px;
+    border-radius: 12px 12px 0 0;
     border: 1.5px solid var(--border);
     box-shadow: 0 4px 24px rgba(13,27,42,0.07);
   }
@@ -267,6 +267,63 @@
     .controls-row.sliders { flex-direction: column; }
     .count { margin-left: 0; }
     .charts-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── pagination ─────────────────────────────────────── */
+  .pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 20px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    font-size: 0.85rem;
+    color: var(--gray);
+  }
+  .pagination-bar .page-size {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pagination-bar select {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    background: var(--light);
+    cursor: pointer;
+  }
+  .pagination-bar .page-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pagination-bar .page-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--light);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    color: var(--navy);
+    transition: background 0.15s;
+  }
+  .pagination-bar .page-btn:hover:not(:disabled) { background: var(--gold-light); }
+  .pagination-bar .page-btn:disabled { opacity: 0.4; cursor: default; }
+  .pagination-bar .page-btn.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+  .pagination-bar .page-info {
+    font-size: 0.82rem;
+    color: var(--gray);
   }
 
   /* ── charts ──────────────────────────────────────────── */
@@ -489,6 +546,20 @@
     </thead>
     <tbody id="tbody"></tbody>
   </table>
+</div>
+<div class="pagination-bar" id="paginationBar">
+  <div class="page-size">
+    <label for="pageSize">Show</label>
+    <select id="pageSize" onchange="changePageSize()">
+      <option value="25" selected>25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+      <option value="0">All</option>
+    </select>
+    <span>per page</span>
+  </div>
+  <div class="page-nav" id="pageNav"></div>
+  <div class="page-info" id="pageInfo"></div>
 </div>
 
 <div class="summary-bar" id="summaryBar">
@@ -964,6 +1035,8 @@ function computeScore(t) {
 
 let sortCol = 7, sortAsc = true;
 let filtered = [...raw];
+let currentPage = 1;
+let pageSize = 25;
 
 function fmt(n) { return '$' + n.toLocaleString(); }
 
@@ -982,7 +1055,16 @@ function render() {
     return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
   });
 
-  tbody.innerHTML = rows.map(t => `
+  // Pagination
+  const total = rows.length;
+  const showAll = pageSize === 0;
+  const totalPages = showAll ? 1 : Math.max(1, Math.ceil(total / pageSize));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = showAll ? 0 : (currentPage - 1) * pageSize;
+  const end = showAll ? total : Math.min(start + pageSize, total);
+  const pageRows = rows.slice(start, end);
+
+  tbody.innerHTML = pageRows.map(t => `
     <tr>
       <td><span class="lot">#${t.lot}</span></td>
       <td>${t.year}</td>
@@ -1017,7 +1099,58 @@ function render() {
     if (arr) arr.textContent = i === sortCol ? (sortAsc ? '↑' : '↓') : '↕';
   });
 
+  // Pagination controls
+  renderPagination(totalPages, total, start, end);
+
   updateCharts();
+}
+
+function renderPagination(totalPages, total, start, end) {
+  const nav = document.getElementById('pageNav');
+  const info = document.getElementById('pageInfo');
+
+  info.textContent = `${start + 1}–${end} of ${total}`;
+
+  if (totalPages <= 1) { nav.innerHTML = ''; return; }
+
+  let btns = '';
+  btns += `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo;</button>`;
+
+  const maxBtns = 7;
+  let pages = [];
+  if (totalPages <= maxBtns) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    let lo = Math.max(2, currentPage - 1);
+    let hi = Math.min(totalPages - 1, currentPage + 1);
+    if (currentPage <= 3) hi = Math.min(4, totalPages - 1);
+    if (currentPage >= totalPages - 2) lo = Math.max(totalPages - 3, 2);
+    if (lo > 2) pages.push('...');
+    for (let i = lo; i <= hi; i++) pages.push(i);
+    if (hi < totalPages - 1) pages.push('...');
+    pages.push(totalPages);
+  }
+
+  pages.forEach(p => {
+    if (p === '...') { btns += `<span style="padding:0 4px;color:#9ca3af">…</span>`; }
+    else { btns += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`; }
+  });
+
+  btns += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>&raquo;</button>`;
+  nav.innerHTML = btns;
+}
+
+function goPage(p) {
+  currentPage = p;
+  render();
+  document.querySelector('.table-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function changePageSize() {
+  pageSize = parseInt(document.getElementById('pageSize').value);
+  currentPage = 1;
+  render();
 }
 
 
@@ -1122,6 +1255,7 @@ function filterTable() {
     if (t.miles < mLo || t.miles > mHi) return false;
     return true;
   });
+  currentPage = 1;
   render();
 }
 
