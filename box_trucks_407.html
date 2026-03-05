@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Box Truck Listings — Marching Band</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0d1b2a;
+    --gold: #f4a11d;
+    --gold-light: #ffd166;
+    --cream: #fdf6ec;
+    --gray: #6b7280;
+    --light: #f9f5ef;
+    --border: #e5ddd0;
+    --green: #2d6a4f;
+    --red: #9b2226;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--navy);
+    padding: 40px 24px;
+    min-height: 100vh;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    letter-spacing: 0.06em;
+    color: var(--navy);
+    line-height: 1;
+  }
+
+  header h1 span {
+    color: var(--gold);
+  }
+
+  header p {
+    margin-top: 8px;
+    color: var(--gray);
+    font-size: 0.95rem;
+  }
+
+  .badge-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .badge {
+    background: var(--navy);
+    color: var(--gold);
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+    padding: 4px 14px;
+    border-radius: 4px;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .controls-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+  }
+  .controls-row.sliders {
+    align-items: stretch;
+  }
+
+  /* make toggle chips */
+  .make-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .make-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid #dde3ef;
+    background: #f8f9fb; color: #4b5563; font-size: 0.8rem; font-weight: 600;
+    cursor: pointer; user-select: none; transition: all .15s;
+    white-space: nowrap;
+  }
+  .make-chip:hover { border-color: #1e3a5f; color: #1e3a5f; background: #eef2fa; }
+  .make-chip.active { background: #1e3a5f; border-color: #1e3a5f; color: #fff; }
+  .make-chip .chip-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    background: currentColor; opacity: .45;
+  }
+  .make-chip.active .chip-dot { opacity: 1; background: #c9a84c; }
+  .make-chip-all {
+    background: #fff; border-color: #c9a84c; color: #92720a;
+  }
+  .make-chip-all.active { background: #c9a84c; border-color: #c9a84c; color: #fff; }
+
+  .controls input, .controls select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    color: var(--navy);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .controls input:focus, .controls select:focus {
+    border-color: var(--gold);
+  }
+
+  .controls input { flex: 1; }
+  .slider-panel { flex: 1; }
+
+  .count {
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: var(--gray);
+    font-weight: 500;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 24px rgba(13,27,42,0.07);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 0.875rem;
+  }
+
+  thead {
+    background: var(--navy);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  thead th {
+    padding: 14px 16px;
+    text-align: left;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    font-weight: 400;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  thead th:hover { background: #1a2f47; }
+  thead th.sorted { color: var(--gold-light); }
+
+  thead th .arrow {
+    display: inline-block;
+    margin-left: 4px;
+    opacity: 0.5;
+    font-size: 0.75rem;
+  }
+  thead th.sorted .arrow { opacity: 1; color: var(--gold-light); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fffbf3; }
+
+  td {
+    padding: 11px 16px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  td.wrap { white-space: normal; min-width: 140px; }
+
+  .lot { color: var(--gray); font-size: 0.8rem; font-weight: 600; }
+
+  .price {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--green);
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.04em;
+    font-size: 1.05rem;
+  }
+
+  .make-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .make-Freightliner { background: #dbeafe; color: #1e40af; }
+  .make-Hino         { background: #fce7f3; color: #9d174d; }
+  .make-International{ background: #d1fae5; color: #065f46; }
+  .make-Ford         { background: #ede9fe; color: #4c1d95; }
+  .make-Mack         { background: #fee2e2; color: #991b1b; }
+  .make-Peterbilt    { background: #f0fdf4; color: #14532d; }
+
+  .miles { color: #374151; }
+  .miles.high { color: #b91c1c; }
+  .miles.low  { color: #15803d; }
+
+  .tag {
+    display: inline-block;
+    background: #f3f4f6;
+    color: #374151;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 0.75rem;
+    margin-right: 3px;
+    margin-bottom: 2px;
+  }
+
+  .tag.liftgate   { background: #e0f2fe; color: #0369a1; }
+  .tag.ramp       { background: #fef9c3; color: #713f12; }
+  .tag.fleet      { background: #dcfce7; color: #15803d; }
+
+  tfoot td {
+    background: var(--light);
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    color: var(--gray);
+    border-top: 2px solid var(--border);
+  }
+
+  .summary-bar {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    background: var(--navy);
+    color: white;
+    border-radius: 12px;
+    padding: 18px 28px;
+    margin-top: 24px;
+  }
+
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 0.75rem; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase; }
+  .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--gold); letter-spacing: 0.04em; }
+
+  @media (max-width: 700px) {
+    .controls-row.sliders { flex-direction: column; }
+    .count { margin-left: 0; }
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── charts ──────────────────────────────────────────── */
+  .charts-section {
+    margin-top: 28px;
+  }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  .chart-card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 20px 14px;
+    box-shadow: 0 2px 12px rgba(13,27,42,0.05);
+  }
+  .chart-card-wide {
+    grid-column: 1 / -1;
+  }
+  .chart-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.06em;
+    color: var(--navy);
+    margin-bottom: 2px;
+  }
+  .chart-subtitle {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin-bottom: 12px;
+  }
+
+  /* ── range slider panel ─────────────────────────────── */
+  .slider-panel {
+    background: #f8f9fb;
+    border: 1px solid #dde3ef;
+    border-radius: 10px;
+    padding: 14px 20px 12px;
+  }
+  .slider-panel .slider-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1e3a5f;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .slider-panel .slider-label span {
+    font-weight: 400;
+    color: #4b5563;
+    font-size: 0.82rem;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .slider-track-wrap {
+    position: relative;
+    height: 28px;
+    margin: 4px 0 2px;
+  }
+  .slider-track-wrap input[type=range] {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    pointer-events: none;
+    -webkit-appearance: none;
+    appearance: none;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    padding: 0;
+    min-width: unset;
+    border: none;
+    outline: none;
+  }
+  .slider-track-wrap input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #1e3a5f;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    pointer-events: all;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+  }
+  .slider-track-wrap input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #1e3a5f;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    pointer-events: all;
+    cursor: pointer;
+  }
+  .slider-track-bg {
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 4px;
+    background: #dde3ef;
+    border-radius: 2px;
+    transform: translateY(-50%);
+    z-index: 0;
+  }
+  .slider-track-fill {
+    position: absolute;
+    top: 50%;
+    height: 4px;
+    background: #c9a84c;
+    border-radius: 2px;
+    transform: translateY(-50%);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .slider-count {
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-top: 3px;
+    text-align: right;
+  }
+  .slider-count strong { color: #1e3a5f; }
+
+  /* ── score badge ─────────────────────────────────────── */
+  .score-badge {
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: 20px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    min-width: 46px;
+    text-align: center;
+  }
+  .score-high { background: #dcfce7; color: #15803d; }
+  .score-mid  { background: #fef9c3; color: #854d0e; }
+  .score-low  { background: #fee2e2; color: #991b1b; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Box Truck Listings<br><span>Marching Band</span></h1>
+  <p>Ritchie Bros. Auction Results · Sorted by Price</p>
+  <div class="badge-row">
+    <span class="badge">406 Listings</span>
+    <span class="badge">Davenport · Houston · Colorado · More</span>
+  </div>
+</header>
+
+<div class="controls">
+
+  <!-- Row 1: search -->
+  <div class="controls-row">
+    <input type="text" id="search" placeholder="🔍  Search make, location, lot…" oninput="filterTable()">
+    <span class="count" id="rowCount"></span>
+  </div>
+
+  <!-- Row 2: make chips -->
+  <div class="controls-row">
+    <div class="make-chips" id="makeChips">
+      <div class="make-chip make-chip-all active" data-make="" onclick="toggleMake(this)">All Makes</div>
+      <div class="make-chip" data-make="Freightliner" onclick="toggleMake(this)"><span class="chip-dot"></span>Freightliner</div>
+      <div class="make-chip" data-make="Hino" onclick="toggleMake(this)"><span class="chip-dot"></span>Hino</div>
+      <div class="make-chip" data-make="International" onclick="toggleMake(this)"><span class="chip-dot"></span>International</div>
+      <div class="make-chip" data-make="Ford" onclick="toggleMake(this)"><span class="chip-dot"></span>Ford</div>
+      <div class="make-chip" data-make="Mack" onclick="toggleMake(this)"><span class="chip-dot"></span>Mack</div>
+      <div class="make-chip" data-make="Peterbilt" onclick="toggleMake(this)"><span class="chip-dot"></span>Peterbilt</div>
+    </div>
+  </div>
+
+  <!-- Row 3: sliders side by side -->
+  <div class="controls-row sliders">
+    <div class="slider-panel">
+      <div class="slider-label">Price <span id="priceLabelVal"></span></div>
+      <div class="slider-track-wrap" id="priceTrackWrap">
+        <div class="slider-track-bg"></div>
+        <div class="slider-track-fill" id="priceTrackFill"></div>
+        <input type="range" id="priceMin" min="12000" max="33000" step="500" value="12000" oninput="syncSlider('price')">
+        <input type="range" id="priceMax" min="12000" max="33000" step="500" value="33000" oninput="syncSlider('price')">
+      </div>
+      <div class="slider-count" id="priceCount"></div>
+    </div>
+
+    <div class="slider-panel">
+      <div class="slider-label">Miles <span id="milesLabelVal"></span></div>
+      <div class="slider-track-wrap" id="milesTrackWrap">
+        <div class="slider-track-bg"></div>
+        <div class="slider-track-fill" id="milesTrackFill"></div>
+        <input type="range" id="milesMin" min="48349" max="253787" step="1000" value="48349" oninput="syncSlider('miles')">
+        <input type="range" id="milesMax" min="48349" max="253787" step="1000" value="253787" oninput="syncSlider('miles')">
+      </div>
+      <div class="slider-count" id="milesCount"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="table-wrap">
+  <table id="truckTable">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">Lot <span class="arrow">↕</span></th>
+        <th onclick="sortTable(1)">Year <span class="arrow">↕</span></th>
+        <th onclick="sortTable(2)" class="wrap">Make / Model <span class="arrow">↕</span></th>
+        <th onclick="sortTable(3)">Body <span class="arrow">↕</span></th>
+        <th onclick="sortTable(4)">Miles <span class="arrow">↕</span></th>
+        <th onclick="sortTable(5)">Location <span class="arrow">↕</span></th>
+        <th onclick="sortTable(6)">Features</th>
+        <th onclick="sortTable(7)" class="sorted">Price <span class="arrow">↑</span></th>
+        <th onclick="sortTable(8)">Score <span class="arrow">↕</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="summary-bar" id="summaryBar">
+  <div class="stat"><span class="stat-label">Shown</span><span class="stat-val" id="s-count">—</span></div>
+  <div class="stat"><span class="stat-label">Lowest Price</span><span class="stat-val" id="s-min">—</span></div>
+  <div class="stat"><span class="stat-label">Highest Price</span><span class="stat-val" id="s-max">—</span></div>
+  <div class="stat"><span class="stat-label">Avg Price</span><span class="stat-val" id="s-avg">—</span></div>
+  <div class="stat"><span class="stat-label">Avg Miles</span><span class="stat-val" id="s-miles">—</span></div>
+</div>
+
+<div class="charts-section">
+  <div class="charts-grid">
+
+    <div class="chart-card">
+      <div class="chart-title">Avg Price by Year</div>
+      <div class="chart-subtitle">Filtered trucks only · count shown in label</div>
+      <canvas id="yearChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Price Distribution</div>
+      <div class="chart-subtitle">Trucks per $2k price bucket</div>
+      <canvas id="histChart"></canvas>
+    </div>
+
+    <div class="chart-card chart-card-wide">
+      <div class="chart-title">Average Sale Price by Make</div>
+      <div class="chart-subtitle">Filtered trucks only · count shown in label</div>
+      <canvas id="makeChart"></canvas>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const raw = [
+  {lot:"14980",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 96"W × 101"H',miles:212494,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:25000,closed:"Feb 20, 2026"},
+  {lot:"14993",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 101"H',miles:126079,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:27000,closed:"Feb 20, 2026"},
+  {lot:"14938A",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:146708,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:28000,closed:"Feb 20, 2026"},
+  {lot:"14954",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 96"W × 162"H',miles:235246,loc:"Davenport, FL",liftgate:false,ramp:false,fleet:false,price:14500,closed:"Feb 20, 2026"},
+  {lot:"14983A",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 97"H',miles:176085,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:21500,closed:"Feb 20, 2026"},
+  {lot:"1298",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:164473,loc:"Humble, TX",liftgate:true,ramp:true,fleet:false,price:31000,closed:"Jan 15, 2026"},
+  {lot:"1107",year:2020,make:"International",model:"MV607 4x2",body:'22 ft × 102"W × 97"H',miles:146884,loc:"Lake Point, UT",liftgate:false,ramp:true,fleet:false,price:14000,closed:"Oct 1, 2025"},
+  {lot:"1089",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 105"H',miles:140114,loc:"Lake Point, UT",liftgate:true,ramp:false,fleet:false,price:27000,closed:"Oct 1, 2025"},
+  {lot:"1292",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 102"H',miles:143694,loc:"Humble, TX",liftgate:true,ramp:false,fleet:false,price:32000,closed:"Jan 15, 2026"},
+  {lot:"1109",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:211551,loc:"Mead, CO",liftgate:true,ramp:false,fleet:false,price:23500,closed:"Oct 1, 2025"},
+  {lot:"1294",year:2017,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:110954,loc:"Humble, TX",liftgate:true,ramp:false,fleet:false,price:33000,closed:"Jan 15, 2026"},
+  {lot:"1098",year:2016,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 103"H',miles:182906,loc:"Mead, CO",liftgate:false,ramp:true,fleet:false,price:14000,closed:"Oct 1, 2025"},
+  {lot:"1276",year:2020,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 85"H',miles:181658,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:33000,closed:"Jan 15, 2026"},
+  {lot:"1099",year:2016,make:"Freightliner",model:"M2 4x2",body:'24 ft × 102"W × 103"H',miles:193429,loc:"Mead, CO",liftgate:false,ramp:true,fleet:false,price:12500,closed:"Oct 1, 2025"},
+  {lot:"1097",year:2016,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 103"H',miles:96382,loc:"Mead, CO",liftgate:false,ramp:true,fleet:false,price:23000,closed:"Oct 1, 2025"},
+  {lot:"1091",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 96"H',miles:192673,loc:"Mead, CO",liftgate:true,ramp:false,fleet:false,price:24500,closed:"Oct 1, 2025"},
+  {lot:"1106",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 105"H',miles:127803,loc:"Lake Point, UT",liftgate:true,ramp:false,fleet:false,price:19500,closed:"Oct 1, 2025"},
+  {lot:"1557",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 97"H',miles:209158,loc:"Medford, MN",liftgate:false,ramp:true,fleet:false,price:17500,closed:"Feb 10, 2026"},
+  {lot:"1523",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:214434,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:false,price:18000,closed:"Feb 10, 2026"},
+  {lot:"864",year:2020,make:"International",model:"MV 607 4x2",body:'26 ft × 102"W × 97"H',miles:159288,loc:"North East, MD",liftgate:false,ramp:false,fleet:false,price:19500,closed:"Feb 4, 2026"},
+  {lot:"1961",year:2016,make:"International",model:"4300 4x2 (Moving)",body:'26 ft × 102"W × 90"H',miles:210109,loc:"Humble, TX",liftgate:true,ramp:false,fleet:false,price:12000,closed:"Feb 12, 2026"},
+  {lot:"1925",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 100"H',miles:180300,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Feb 12, 2026"},
+  {lot:"14962",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'× 96"W × 96"H',miles:179789,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:12500,closed:"Feb 20, 2026"},
+  {lot:"851",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 96"H',miles:159505,loc:"North East, MD",liftgate:true,ramp:true,fleet:false,price:31000,closed:"Feb 4, 2026"},
+  {lot:"866",year:2019,make:"International",model:"4300 SBA 4x2",body:'26 ft × 102"W × 97"H',miles:160796,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:20500,closed:"Feb 4, 2026"},
+  {lot:"1908",year:2022,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:172558,loc:"Lake Worth, TX",liftgate:true,ramp:true,fleet:true,price:31000,closed:"Feb 12, 2026"},
+  {lot:"1511",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 96"H',miles:221498,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:true,price:19000,closed:"Feb 10, 2026"},
+  {lot:"1909",year:2021,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 102"W × 103"H',miles:129686,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Feb 12, 2026"},
+  {lot:"15002",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 98"H',miles:126323,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:19500,closed:"Feb 20, 2026"},
+  {lot:"14949",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 96"H',miles:221823,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:23000,closed:"Feb 20, 2026"},
+  {lot:"1930",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'22 ft × 102"W × 91"H',miles:157868,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Feb 12, 2026"},
+  {lot:"1938",year:2020,make:"Hino",model:"268 4x2 (Moving)",body:'26 ft × 102"W × 102"H',miles:222803,loc:"Livingston, LA",liftgate:true,ramp:false,fleet:false,price:17500,closed:"Feb 12, 2026"},
+  {lot:"14999",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 102"H',miles:218914,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:18000,closed:"Feb 20, 2026"},
+  {lot:"1208",year:2017,make:"Freightliner",model:"M2 106 6x4",body:'28 ft × 102"W × 104"H',miles:140374,loc:"Mead, CO",liftgate:false,ramp:false,fleet:false,price:20500,closed:"Feb 25, 2026"},
+  {lot:"1211",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:126088,loc:"Lake Point, UT",liftgate:true,ramp:false,fleet:true,price:20500,closed:"Feb 25, 2026"},
+  {lot:"1572",year:2017,make:"International",model:"4300 4x2 (Moving)",body:'26 ft × 102"W × 94"H',miles:205145,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:13000,closed:"Feb 10, 2026"},
+  {lot:"1920",year:2019,make:"Freightliner",model:"M2106 4x2",body:'28 ft × 102"W × 97"H',miles:98509,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:30000,closed:"Feb 12, 2026"},
+  {lot:"1939",year:2019,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 104"H',miles:77849,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:30000,closed:"Feb 12, 2026"},
+  {lot:"14945",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 102"W × 97"H',miles:190452,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Feb 20, 2026"},
+  {lot:"1922",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:119701,loc:"Humble, TX",liftgate:true,ramp:true,fleet:true,price:25000,closed:"Feb 12, 2026"},
+  {lot:"1962",year:2016,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:199869,loc:"Humble, TX",liftgate:true,ramp:false,fleet:false,price:19500,closed:"Feb 12, 2026"},
+  {lot:"14965",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 91"H',miles:169110,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:17500,closed:"Feb 20, 2026"},
+  {lot:"1220",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:234140,loc:"Mead, CO",liftgate:true,ramp:true,fleet:true,price:20500,closed:"Feb 25, 2026"},
+  {lot:"14943",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 92"H',miles:161892,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:24000,closed:"Feb 20, 2026"},
+  {lot:"1217",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 104"H',miles:198518,loc:"Mead, CO",liftgate:true,ramp:true,fleet:true,price:21000,closed:"Feb 25, 2026"},
+  {lot:"14955",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 96"W × 144"H',miles:245517,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:20500,closed:"Feb 20, 2026"},
+  {lot:"924",year:2021,make:"International",model:"MV607 4x2",body:'20 ft × 96"W × 102"H',miles:174667,loc:"Dunnigan, CA",liftgate:false,ramp:false,fleet:false,price:16000,closed:"Feb 12, 2026"},
+  {lot:"14933",year:2022,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 96"W × 94"H',miles:181725,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:32000,closed:"Feb 20, 2026"},
+  {lot:"1949",year:2021,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:130517,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Feb 12, 2026"},
+  {lot:"1215",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'30 ft × 102"W × 85"H',miles:223909,loc:"Mead, CO",liftgate:true,ramp:false,fleet:false,price:22500,closed:"Feb 25, 2026"},
+  {lot:"1526",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'20 ft × 102"W × 83"H',miles:248691,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:true,price:16000,closed:"Feb 10, 2026"},
+  {lot:"1914",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:152980,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:21500,closed:"Feb 12, 2026"},
+  {lot:"1910",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:108025,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Feb 12, 2026"},
+  {lot:"545",year:2020,make:"Hino",model:"268 4x2 (Moving)",body:'26 ft × 102"W × 85"H',miles:132458,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:23000,closed:"Feb 26, 2026"},
+  {lot:"1915",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 102"W × 85"H',miles:153384,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:18500,closed:"Feb 12, 2026"},
+  {lot:"1514",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 107"H',miles:140139,loc:"South Vienna, OH",liftgate:false,ramp:false,fleet:true,price:31000,closed:"Feb 10, 2026"},
+  {lot:"904",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:177995,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Feb 12, 2026"},
+  {lot:"952",year:2019,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 109"H',miles:235571,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:14500,closed:"Feb 12, 2026"},
+  {lot:"14926",year:2020,make:"International",model:"MV607 6x4 (Moving)",body:'26 ft × 96"W × 144"H',miles:133282,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:26000,closed:"Feb 20, 2026"},
+  {lot:"955",year:2019,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 109"H',miles:248940,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:16000,closed:"Feb 12, 2026"},
+  {lot:"1948",year:2021,make:"International",model:"MV607 4x2",body:'24 ft × 102"W × 103"H',miles:98454,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:24500,closed:"Feb 12, 2026"},
+  {lot:"1575",year:2016,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 102"H',miles:184396,loc:"Odessa, MO",liftgate:true,ramp:false,fleet:false,price:12500,closed:"Feb 10, 2026"},
+  {lot:"14994",year:2020,make:"International",model:"MV 607 4x2 (Moving)",body:'26 ft × 102"W × 97"H',miles:199056,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:25000,closed:"Feb 20, 2026"},
+  {lot:"14984",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 97"H',miles:186319,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:25000,closed:"Feb 20, 2026"},
+  {lot:"853",year:2018,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 97"H',miles:217737,loc:"Butner, NC",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Feb 4, 2026"},
+  {lot:"923",year:2021,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:145970,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:31000,closed:"Feb 12, 2026"},
+  {lot:"1216",year:2018,make:"Freightliner",model:"M2106 4x2",body:'28 ft × 102"W × 97"H',miles:116376,loc:"Mead, CO",liftgate:true,ramp:false,fleet:false,price:19500,closed:"Feb 25, 2026"},
+  {lot:"1537",year:2022,make:"Hino",model:"L6 4x2",body:'26 ft × 102"W × 104"H',miles:126121,loc:"Morris, IL",liftgate:false,ramp:false,fleet:false,price:27000,closed:"Feb 10, 2026"},
+  {lot:"550",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:226227,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:27000,closed:"Feb 26, 2026"},
+  {lot:"1522",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 95"H',miles:188782,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:true,price:31000,closed:"Feb 10, 2026"},
+  {lot:"845",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:211976,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:30000,closed:"Feb 4, 2026"},
+  {lot:"868",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 91"H',miles:155236,loc:"North Franklin, CT",liftgate:true,ramp:false,fleet:false,price:19500,closed:"Feb 4, 2026"},
+  {lot:"1550",year:2020,make:"International",model:"MV607 4x2",body:'28 ft × 102"W × 103"H',miles:70547,loc:"Morris, IL",liftgate:false,ramp:false,fleet:true,price:31000,closed:"Feb 10, 2026"},
+  {lot:"1558",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 97"H',miles:230153,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:15000,closed:"Feb 10, 2026"},
+  {lot:"1530",year:2016,make:"Freightliner",model:"M2 106 4x2 (Moving)",body:'20 ft × 102"W × 96"H',miles:87733,loc:"Morris, IL",liftgate:true,ramp:false,fleet:true,price:15000,closed:"Feb 10, 2026"},
+  {lot:"15006",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 104"H',miles:215160,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:18000,closed:"Feb 20, 2026"},
+  {lot:"1516",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:196509,loc:"Morris, IL",liftgate:true,ramp:true,fleet:false,price:17500,closed:"Feb 10, 2026"},
+  {lot:"1555",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:164116,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:22500,closed:"Feb 10, 2026"},
+  {lot:"14977",year:2018,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 106"H',miles:176209,loc:"Davenport, FL",liftgate:true,ramp:true,fleet:true,price:22500,closed:"Feb 20, 2026"},
+  {lot:"1931",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:193489,loc:"Lake Worth, TX",liftgate:false,ramp:true,fleet:true,price:17500,closed:"Feb 12, 2026"},
+  {lot:"1506A",year:2021,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 102"W × 97"H',miles:197735,loc:"Morris, IL",liftgate:false,ramp:false,fleet:false,price:16000,closed:"Feb 10, 2026"},
+  {lot:"940",year:2018,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 103"H',miles:164904,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:19000,closed:"Feb 12, 2026"},
+  {lot:"1919",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 96"H',miles:235314,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:false,price:12000,closed:"Feb 12, 2026"},
+  {lot:"1953A",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 97"H',miles:167219,loc:"Humble, TX",liftgate:false,ramp:true,fleet:true,price:18500,closed:"Feb 12, 2026"},
+  {lot:"15009",year:2017,make:"International",model:"4300 SBA 4x2",body:'26 ft × 96"W × 86"H',miles:208055,loc:"Davenport, FL",liftgate:false,ramp:false,fleet:false,price:14000,closed:"Feb 20, 2026"},
+  {lot:"1912",year:2020,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 103"H',miles:131193,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Feb 12, 2026"},
+  {lot:"14958",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'20 ft × 96"W × 156"H',miles:76668,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:15500,closed:"Feb 20, 2026"},
+  {lot:"14944",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 96"W × 102"H',miles:185770,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:24500,closed:"Feb 20, 2026"},
+  {lot:"14947",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 102"H',miles:214289,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Feb 20, 2026"},
+  {lot:"14981",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 96"W × 101"H',miles:215558,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:25000,closed:"Feb 20, 2026"},
+  {lot:"551",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 109"H',miles:245269,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:false,price:16000,closed:"Feb 26, 2026"},
+  {lot:"853b",year:2018,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 97"H',miles:217737,loc:"Butner, NC",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Feb 4, 2026"},
+  {lot:"923b",year:2021,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:145970,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:31000,closed:"Feb 12, 2026"},
+  {lot:"14977b",year:2018,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 106"H',miles:176209,loc:"Davenport, FL",liftgate:true,ramp:true,fleet:true,price:22500,closed:"Feb 20, 2026"},
+  {lot:"1223",year:2017,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 96"W × 110"H',miles:174235,loc:"Lake Point, UT",liftgate:true,ramp:false,fleet:false,price:18500,closed:"Feb 25, 2026"},
+  {lot:"1563",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 97"H',miles:223830,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:19500,closed:"Feb 10, 2026"},
+  {lot:"14946",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 96"H',miles:196476,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:23000,closed:"Feb 20, 2026"},
+  {lot:"1917",year:2020,make:"Freightliner",model:"M2 106",body:'26 ft × 102"W × 103"H',miles:166762,loc:"Lake Worth, TX",liftgate:true,ramp:true,fleet:true,price:25000,closed:"Feb 12, 2026"},
+  {lot:"1537b",year:2022,make:"Hino",model:"L6 4x2",body:'26 ft × 102"W × 104"H',miles:126121,loc:"Morris, IL",liftgate:false,ramp:false,fleet:false,price:27000,closed:"Feb 10, 2026"},
+  {lot:"550b",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:226227,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:27000,closed:"Feb 26, 2026"},
+  {lot:"1216b",year:2018,make:"Freightliner",model:"M2106 4x2",body:'28 ft × 102"W × 97"H',miles:116376,loc:"Mead, CO",liftgate:true,ramp:false,fleet:false,price:19500,closed:"Feb 25, 2026"},
+  {lot:"903",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:135763,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Feb 12, 2026"},
+  {lot:"14987",year:2016,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 91"H',miles:171145,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:14000,closed:"Feb 20, 2026"},
+  {lot:"1950",year:2021,make:"International",model:"MV 607 4x2",body:'26 ft × 102"W × 100"H',miles:139364,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:32000,closed:"Feb 12, 2026"},
+  {lot:"14991",year:2022,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:183132,loc:"Davenport, FL",liftgate:true,ramp:true,fleet:false,price:30000,closed:"Feb 20, 2026"},
+  {lot:"14953",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:120763,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:29000,closed:"Feb 20, 2026"},
+  {lot:"831",year:2018,make:"Freightliner",model:"M2 106 6x4",body:'26 ft × 102"W × 103"H',miles:167534,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:22000,closed:"Feb 4, 2026"},
+  {lot:"1545",year:2016,make:"Hino",model:"268 4x2",body:'26 ft × 96"W × 100"H',miles:134855,loc:"South Vienna, OH",liftgate:false,ramp:true,fleet:true,price:20000,closed:"Feb 10, 2026"},
+  {lot:"858",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 96"W × 97"H',miles:242286,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:15500,closed:"Feb 4, 2026"},
+  {lot:"907",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'—',miles:139594,loc:"Perris, CA",liftgate:false,ramp:false,fleet:true,price:32000,closed:"Feb 12, 2026"},
+  {lot:"930",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 100"H',miles:245243,loc:"Tulare, CA",liftgate:true,ramp:false,fleet:false,price:15000,closed:"Feb 12, 2026"},
+  {lot:"1518",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 100"W × 92"H',miles:228552,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:true,price:12000,closed:"Feb 10, 2026"},
+  {lot:"1953",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 105"H',miles:138736,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:23000,closed:"Feb 12, 2026"},
+  {lot:"1957",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:174133,loc:"Humble, TX",liftgate:true,ramp:true,fleet:true,price:21000,closed:"Feb 12, 2026"},
+  {lot:"1916",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:154423,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:29000,closed:"Feb 12, 2026"},
+  {lot:"1509",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 95"H',miles:81407,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:true,price:32000,closed:"Feb 10, 2026"},
+  {lot:"1549",year:2020,make:"International",model:"MV607 4x2",body:'28 ft × 102"W × 103"H',miles:67273,loc:"Morris, IL",liftgate:false,ramp:false,fleet:true,price:33000,closed:"Feb 10, 2026"},
+  {lot:"1552",year:2020,make:"International",model:"MV607 4x2",body:'28 ft × 102"W × 103"H',miles:91414,loc:"Morris, IL",liftgate:false,ramp:false,fleet:true,price:32000,closed:"Feb 10, 2026"},
+  {lot:"1553",year:2020,make:"International",model:"MV 607 4x2 (Moving)",body:'28 ft × 102"W × 103"H',miles:92049,loc:"Morris, IL",liftgate:false,ramp:false,fleet:true,price:31000,closed:"Feb 10, 2026"},
+  {lot:"15007",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 105"H',miles:208340,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:15500,closed:"Feb 20, 2026"},
+  {lot:"960",year:2017,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 97"H',miles:116862,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:false,price:22000,closed:"Feb 12, 2026"},
+  {lot:"15003",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 104"H',miles:95464,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:20500,closed:"Feb 20, 2026"},
+  {lot:"14959",year:2017,make:"Freightliner",model:"M2 106 4x2 (Moving)",body:'28 ft × 102"W × 103"H',miles:143831,loc:"Davenport, FL",liftgate:false,ramp:false,fleet:true,price:20500,closed:"Feb 20, 2026"},
+  {lot:"1540",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 102"H',miles:198651,loc:"Carleton, MI",liftgate:true,ramp:true,fleet:false,price:23000,closed:"Feb 10, 2026"},
+  {lot:"1554",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 96"H',miles:129309,loc:"Odessa, MO",liftgate:true,ramp:true,fleet:true,price:23500,closed:"Feb 10, 2026"},
+  {lot:"1951",year:2020,make:"International",model:"MV607 4x2",body:'24 ft × 102"W × 103"H',miles:81127,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:27000,closed:"Feb 12, 2026"},
+  {lot:"14979",year:2019,make:"Hino",model:"268 4x2 (Moving)",body:'26 ft × 102"W × 157"H',miles:139971,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:27000,closed:"Feb 20, 2026"},
+  {lot:"848",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:206367,loc:"Butner, NC",liftgate:true,ramp:false,fleet:false,price:15500,closed:"Feb 4, 2026"},
+  {lot:"1214",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 108"H',miles:186438,loc:"Lake Point, UT",liftgate:true,ramp:false,fleet:true,price:15500,closed:"Feb 25, 2026"},
+  {lot:"1224",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 96"W × 100"H',miles:188342,loc:"Lake Point, UT",liftgate:true,ramp:false,fleet:false,price:17500,closed:"Feb 25, 2026"},
+  {lot:"1954",year:2020,make:"International",model:"MV 607 4x2 (Moving)",body:'26 ft × 102"W × 90"H',miles:206149,loc:"Humble, TX",liftgate:false,ramp:false,fleet:true,price:17500,closed:"Feb 12, 2026"},
+  {lot:"14966",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 91"H',miles:187672,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:18500,closed:"Feb 20, 2026"},
+  {lot:"1941",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:193466,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:21500,closed:"Feb 12, 2026"},
+  {lot:"1942",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:212818,loc:"Humble, TX",liftgate:true,ramp:false,fleet:false,price:23000,closed:"Feb 12, 2026"},
+  {lot:"14992",year:2020,make:"International",model:"MV607 4x2",body:'20 ft × 102"W × 103"H',miles:100530,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Feb 20, 2026"},
+  {lot:"1911",year:2020,make:"Freightliner",model:"M2106 4x2",body:'28 ft × 102"W × 103"H',miles:111271,loc:"Humble, TX",liftgate:false,ramp:false,fleet:true,price:31000,closed:"Feb 12, 2026"},
+  {lot:"947",year:2019,make:"Hino",model:"268 4x2",body:'28 ft × 102"W × 98"H',miles:212492,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Feb 12, 2026"},
+  {lot:"15011",year:2017,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 97"H',miles:248230,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:14000,closed:"Feb 20, 2026"},
+  {lot:"15001",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 151"H',miles:173959,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:18500,closed:"Feb 20, 2026"},
+  {lot:"1546",year:2022,make:"International",model:"MV 607 4x2 (Moving)",body:'26 ft × 102"W × 103"H',miles:90409,loc:"Morris, IL",liftgate:false,ramp:false,fleet:true,price:30000,closed:"Feb 10, 2026"},
+  {lot:"1512",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:224611,loc:"Medford, MN",liftgate:true,ramp:false,fleet:false,price:22000,closed:"Feb 10, 2026"},
+  {lot:"14940",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 107"H',miles:96719,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Feb 20, 2026"},
+  {lot:"15008",year:2017,make:"International",model:"4300 SBA 4x2",body:'26 ft × 102"W × 97"H',miles:167797,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:16000,closed:"Feb 20, 2026"},
+  {lot:"1539",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:125891,loc:"Odessa, MO",liftgate:true,ramp:true,fleet:true,price:25000,closed:"Feb 10, 2026"},
+  {lot:"14938",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 105"H',miles:186689,loc:"Davenport, FL",liftgate:false,ramp:false,fleet:true,price:24500,closed:"Feb 20, 2026"},
+  {lot:"1521",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:177148,loc:"Morris, IL",liftgate:true,ramp:true,fleet:false,price:17500,closed:"Feb 10, 2026"},
+  {lot:"935",year:2022,make:"Mack",model:"MD 4x2",body:'26 ft × 102"W × 104"H',miles:163016,loc:"Perris, CA",liftgate:false,ramp:false,fleet:false,price:26000,closed:"Feb 12, 2026"},
+  {lot:"14948",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:218045,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:25000,closed:"Feb 20, 2026"},
+  {lot:"938",year:2017,make:"Peterbilt",model:"337 4x2",body:'24 ft × 102"W × 103"H',miles:117679,loc:"Perris, CA",liftgate:true,ramp:false,fleet:false,price:22000,closed:"Feb 12, 2026"},
+  {lot:"1517",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:213656,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:true,price:27000,closed:"Feb 10, 2026"},
+  {lot:"1506B",year:2022,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:170778,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:27000,closed:"Feb 10, 2026"},
+  {lot:"546",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 85"H',miles:167413,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:21500,closed:"Feb 26, 2026"},
+  {lot:"921",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:184062,loc:"Mead, CO",liftgate:true,ramp:false,fleet:false,price:20500,closed:"Dec 3, 2025"},
+  {lot:"924A",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'30 ft × 102"W × 85"H',miles:201014,loc:"Mead, CO",liftgate:true,ramp:false,fleet:false,price:17000,closed:"Dec 3, 2025"},
+  {lot:"929",year:2020,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 105"H',miles:152574,loc:"Lake Point, UT",liftgate:true,ramp:false,fleet:false,price:16500,closed:"Dec 3, 2025"},
+  {lot:"930b",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 98"H',miles:127392,loc:"Lake Point, UT",liftgate:true,ramp:false,fleet:false,price:15500,closed:"Dec 3, 2025"},
+  {lot:"925",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:203045,loc:"Mead, CO",liftgate:true,ramp:false,fleet:false,price:17000,closed:"Dec 3, 2025"},
+  {lot:"2402",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 109"H',miles:129667,loc:"Humble, TX",liftgate:false,ramp:true,fleet:true,price:28000,closed:"Nov 5, 2025"},
+  {lot:"2436",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:216299,loc:"Humble, TX",liftgate:true,ramp:true,fleet:false,price:19500,closed:"Nov 5, 2025"},
+  {lot:"2415",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 108"H',miles:211066,loc:"Humble, TX",liftgate:true,ramp:false,fleet:false,price:23500,closed:"Nov 5, 2025"},
+  {lot:"2403",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 97"H',miles:134789,loc:"Humble, TX",liftgate:false,ramp:false,fleet:true,price:29000,closed:"Nov 5, 2025"},
+  {lot:"2405",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 97"H',miles:197418,loc:"Humble, TX",liftgate:true,ramp:true,fleet:true,price:28000,closed:"Nov 5, 2025"},
+  {lot:"2399",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:222417,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:24500,closed:"Nov 5, 2025"},
+  {lot:"2434",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 100"H',miles:192167,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Nov 5, 2025"},
+  {lot:"2400",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 98"H',miles:214436,loc:"Humble, TX",liftgate:false,ramp:false,fleet:false,price:27000,closed:"Nov 5, 2025"},
+  {lot:"2404",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:168929,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:19500,closed:"Nov 5, 2025"},
+  {lot:"2433",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:198588,loc:"Humble, TX",liftgate:true,ramp:true,fleet:true,price:22500,closed:"Nov 5, 2025"},
+  {lot:"2435",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:122270,loc:"Humble, TX",liftgate:true,ramp:false,fleet:true,price:17500,closed:"Nov 5, 2025"},
+  {lot:"2410",year:2019,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 103"H',miles:217100,loc:"Humble, TX",liftgate:true,ramp:false,fleet:false,price:12000,closed:"Nov 5, 2025"},
+  {lot:"2428",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:196389,loc:"Humble, TX",liftgate:true,ramp:true,fleet:true,price:23500,closed:"Nov 5, 2025"},
+  {lot:"7507",year:2020,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 85"H',miles:150193,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:20000,closed:"Nov 7, 2025"},
+  {lot:"7508",year:2020,make:"Hino",model:"338 4x2",body:'26 ft × 96"W × 157"H',miles:156213,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Nov 7, 2025"},
+  {lot:"7490",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:221540,loc:"Davenport, FL",liftgate:true,ramp:true,fleet:true,price:26000,closed:"Nov 7, 2025"},
+  {lot:"7496",year:2018,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 85"H',miles:247705,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:33000,closed:"Nov 7, 2025"},
+  {lot:"7511",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:104509,loc:"Davenport, FL",liftgate:true,ramp:true,fleet:true,price:28000,closed:"Nov 7, 2025"},
+  {lot:"7501",year:2016,make:"Freightliner",model:"M2106 4x2 (Moving)",body:'28 ft × 102"W × 154"H',miles:140344,loc:"Davenport, FL",liftgate:false,ramp:false,fleet:false,price:22500,closed:"Nov 7, 2025"},
+  {lot:"7500",year:2017,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 97"H',miles:227766,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Nov 7, 2025"},
+  {lot:"7509",year:2019,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 144"H',miles:48349,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:30000,closed:"Nov 7, 2025"},
+  {lot:"7515",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:245428,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:21000,closed:"Nov 7, 2025"},
+  {lot:"7512",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 102"H',miles:179868,loc:"Davenport, FL",liftgate:false,ramp:false,fleet:false,price:23500,closed:"Nov 7, 2025"},
+  {lot:"7493",year:2018,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 102"H',miles:117866,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:true,price:30000,closed:"Nov 7, 2025"},
+  {lot:"7513",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:228463,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:22500,closed:"Nov 7, 2025"},
+  {lot:"7494",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:128528,loc:"Davenport, FL",liftgate:true,ramp:false,fleet:false,price:27000,closed:"Nov 7, 2025"},
+  {lot:"1418",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 96"W × 97"H',miles:204652,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:12500,closed:"Oct 8, 2025"},
+  {lot:"1364",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:145028,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:22000,closed:"Oct 8, 2025"},
+  {lot:"1378A",year:2022,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 96"W × 100"H',miles:183802,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Oct 8, 2025"},
+  {lot:"1388",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:129784,loc:"Butner, NC",liftgate:true,ramp:false,fleet:false,price:32000,closed:"Oct 8, 2025"},
+  {lot:"639",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:148545,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:25000,closed:"Oct 8, 2025"},
+  {lot:"1370",year:2016,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 91"H',miles:81971,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:19000,closed:"Oct 8, 2025"},
+  {lot:"1413",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 91"H',miles:167254,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:20000,closed:"Oct 8, 2025"},
+  {lot:"645",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:209510,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:17500,closed:"Oct 8, 2025"},
+  {lot:"1353",year:2018,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 103"H',miles:176336,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:19000,closed:"Oct 8, 2025"},
+  {lot:"1428",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:231531,loc:"North East, MD",liftgate:true,ramp:true,fleet:true,price:17500,closed:"Oct 8, 2025"},
+  {lot:"1396",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:239912,loc:"Butner, NC",liftgate:true,ramp:false,fleet:false,price:16000,closed:"Oct 8, 2025"},
+  {lot:"1381",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:144629,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:30000,closed:"Oct 8, 2025"},
+  {lot:"640",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:170642,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:22000,closed:"Oct 8, 2025"},
+  {lot:"1425",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 97"H',miles:134011,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:27000,closed:"Oct 8, 2025"},
+  {lot:"641",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:174517,loc:"Dunnigan, CA",liftgate:true,ramp:true,fleet:true,price:22000,closed:"Oct 8, 2025"},
+  {lot:"1331",year:2020,make:"International",model:"MV607 6x4",body:'24 ft × 96"W × 97"H',miles:175753,loc:"North East, MD",liftgate:false,ramp:true,fleet:true,price:22000,closed:"Oct 8, 2025"},
+  {lot:"1391",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 91"H',miles:213161,loc:"Butner, NC",liftgate:true,ramp:false,fleet:true,price:15000,closed:"Oct 8, 2025"},
+  {lot:"1437",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 96"H',miles:222223,loc:"North East, MD",liftgate:true,ramp:true,fleet:false,price:16000,closed:"Oct 8, 2025"},
+  {lot:"1439",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:173591,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:17000,closed:"Oct 8, 2025"},
+  {lot:"1399",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 102"H',miles:138838,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:28000,closed:"Oct 8, 2025"},
+  {lot:"1335",year:2020,make:"International",model:"MV607 6x4",body:'24 ft × 96"W × 96"H',miles:186575,loc:"North East, MD",liftgate:false,ramp:true,fleet:true,price:20000,closed:"Oct 8, 2025"},
+  {lot:"1402",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:183411,loc:"Butner, NC",liftgate:true,ramp:true,fleet:false,price:13000,closed:"Oct 8, 2025"},
+  {lot:"1387",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:242693,loc:"North East, MD",liftgate:true,ramp:true,fleet:true,price:15000,closed:"Oct 8, 2025"},
+  {lot:"1419",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:209443,loc:"North Franklin, CT",liftgate:true,ramp:false,fleet:false,price:14000,closed:"Oct 8, 2025"},
+  {lot:"1424",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 97"H',miles:88386,loc:"North East, MD",liftgate:false,ramp:false,fleet:false,price:28000,closed:"Oct 8, 2025"},
+  {lot:"1403",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 109"H',miles:186261,loc:"Butner, NC",liftgate:true,ramp:false,fleet:false,price:24500,closed:"Oct 8, 2025"},
+  {lot:"1340",year:2022,make:"Mack",model:"MD 4x2",body:'26 ft × 96"W × 97"H',miles:245650,loc:"North Franklin, CT",liftgate:true,ramp:false,fleet:false,price:22500,closed:"Oct 8, 2025"},
+  {lot:"1336",year:2020,make:"International",model:"MV607 6x4",body:'24 ft × 96"W × 97"H',miles:187824,loc:"North East, MD",liftgate:false,ramp:false,fleet:true,price:20000,closed:"Oct 8, 2025"},
+  {lot:"1431",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 97"H',miles:81088,loc:"North East, MD",liftgate:false,ramp:false,fleet:true,price:12000,closed:"Oct 8, 2025"},
+  {lot:"1440",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 96"H',miles:173785,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:14000,closed:"Oct 8, 2025"},
+  {lot:"1435",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 97"H',miles:199493,loc:"North Franklin, CT",liftgate:true,ramp:false,fleet:false,price:18500,closed:"Oct 8, 2025"},
+  {lot:"651",year:2019,make:"Hino",model:"268 4x2",body:'20 ft × 102"W × 103"H',miles:134998,loc:"Dunnigan, CA",liftgate:true,ramp:true,fleet:true,price:22000,closed:"Oct 8, 2025"},
+  {lot:"1436",year:2019,make:"International",model:"4300 4x2 (Moving)",body:'26 ft × 96"W × 102"H',miles:213891,loc:"North East, MD",liftgate:false,ramp:false,fleet:false,price:14500,closed:"Oct 8, 2025"},
+  {lot:"643",year:2019,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:200735,loc:"Dunnigan, CA",liftgate:true,ramp:true,fleet:true,price:18500,closed:"Oct 8, 2025"},
+  {lot:"1426",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 97"H',miles:149937,loc:"North East, MD",liftgate:true,ramp:true,fleet:false,price:21500,closed:"Oct 8, 2025"},
+  {lot:"1358",year:2020,make:"Hino",model:"268 4x2",body:'24 ft × 96"W × 90"H',miles:212432,loc:"North Franklin, CT",liftgate:true,ramp:false,fleet:false,price:14500,closed:"Oct 8, 2025"},
+  {lot:"638",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:144957,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Oct 8, 2025"},
+  {lot:"1383",year:2020,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:183095,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:21500,closed:"Oct 8, 2025"},
+  {lot:"649",year:2020,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 103"H',miles:178192,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:17500,closed:"Oct 8, 2025"},
+  {lot:"1404",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:212075,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:17000,closed:"Oct 8, 2025"},
+  {lot:"1414",year:2017,make:"Freightliner",model:"M2 106 (Moving/Day Cab)",body:'26 ft × 102"W × 104"H',miles:217113,loc:"Charlotte, NC",liftgate:true,ramp:false,fleet:false,price:19000,closed:"Oct 8, 2025"},
+  {lot:"616",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:163904,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:22000,closed:"Oct 8, 2025"},
+  {lot:"637",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:144142,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Oct 8, 2025"},
+  {lot:"644",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:179069,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Oct 8, 2025"},
+  {lot:"1432",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 97"H',miles:124004,loc:"North East, MD",liftgate:false,ramp:false,fleet:true,price:13000,closed:"Oct 8, 2025"},
+  {lot:"1363",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 98"H',miles:109392,loc:"Burgettstown, PA",liftgate:true,ramp:false,fleet:false,price:21000,closed:"Oct 8, 2025"},
+  {lot:"1332",year:2020,make:"International",model:"MV607 6x4",body:'24 ft × 96"W × 97"H',miles:179067,loc:"North East, MD",liftgate:false,ramp:false,fleet:true,price:21000,closed:"Oct 8, 2025"},
+  {lot:"1441",year:2017,make:"International",model:"4300 4x2",body:'24 ft × 102"W × 91"H',miles:209169,loc:"North East, MD",liftgate:false,ramp:false,fleet:false,price:12500,closed:"Oct 8, 2025"},
+  {lot:"1338",year:2020,make:"International",model:"MV607 6x4",body:'24 ft × 96"W × 97"H',miles:201099,loc:"North East, MD",liftgate:false,ramp:true,fleet:true,price:17000,closed:"Oct 8, 2025"},
+  {lot:"1360",year:2020,make:"Hino",model:"268A 4x2",body:'26 ft × 96"W × 93"H',miles:218552,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:18500,closed:"Oct 8, 2025"},
+  {lot:"1368",year:2017,make:"Hino",model:"268 4x2",body:'26 ft × 96"W × 85"H',miles:253787,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:13000,closed:"Oct 8, 2025"},
+  {lot:"1339",year:2018,make:"Freightliner",model:"M2106 6x4",body:'24 ft × 102"W × 85"H',miles:181045,loc:"North East, MD",liftgate:false,ramp:true,fleet:true,price:15500,closed:"Oct 8, 2025"},
+  {lot:"1386",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 95"H',miles:238824,loc:"Burgettstown, PA",liftgate:true,ramp:false,fleet:true,price:15000,closed:"Oct 8, 2025"},
+  {lot:"1334",year:2020,make:"International",model:"MV607 6x4",body:'24 ft × 96"W × 97"H',miles:182300,loc:"North East, MD",liftgate:false,ramp:true,fleet:true,price:20000,closed:"Oct 8, 2025"},
+  {lot:"1333",year:2020,make:"International",model:"MV607 6x4",body:'24 ft × 96"W × 97"H',miles:181821,loc:"North East, MD",liftgate:false,ramp:true,fleet:true,price:21000,closed:"Oct 8, 2025"},
+  {lot:"620",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:159732,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:22500,closed:"Oct 8, 2025"},
+  {lot:"1401",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 105"H',miles:167865,loc:"Burgettstown, PA",liftgate:true,ramp:false,fleet:true,price:22500,closed:"Oct 8, 2025"},
+  {lot:"615",year:2021,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:250142,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:false,price:20500,closed:"Oct 8, 2025"},
+  {lot:"1423",year:2023,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 101"H',miles:243708,loc:"Burgettstown, PA",liftgate:false,ramp:false,fleet:false,price:19500,closed:"Oct 8, 2025"},
+  {lot:"1433",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 105"H',miles:155813,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:23500,closed:"Oct 8, 2025"},
+  {lot:"1337",year:2020,make:"International",model:"MV607 6x4",body:'24 ft × 96"W × 97"H',miles:193152,loc:"North East, MD",liftgate:false,ramp:true,fleet:true,price:20000,closed:"Oct 8, 2025"},
+  {lot:"* Lot 622",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:190629,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:true,price:22500,closed:"Oct 8, 2025"},
+  {lot:"630",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'20 ft × 102"W × 103"H',miles:198695,loc:"Dunnigan, CA",liftgate:false,ramp:false,fleet:false,price:20000,closed:"Oct 8, 2025"},
+  {lot:"636",year:2023,make:"International",model:"MV607 SBA 4x2",body:'26 ft × 102"W × 96"H',miles:250979,loc:"Dunnigan, CA",liftgate:false,ramp:false,fleet:false,price:21000,closed:"Oct 8, 2025"},
+  {lot:"1384",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:191574,loc:"North East, MD",liftgate:true,ramp:true,fleet:true,price:15000,closed:"Oct 8, 2025"},
+  {lot:"1357",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 102"H',miles:202067,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:21500,closed:"Oct 8, 2025"},
+  {lot:"797",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:212188,loc:"Perris, CA",liftgate:true,ramp:true,fleet:true,price:32000,closed:"Oct 23, 2025"},
+  {lot:"801",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 96"H',miles:121585,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:33000,closed:"Oct 23, 2025"},
+  {lot:"2248",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:152957,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:29000,closed:"Oct 29, 2025"},
+  {lot:"811",year:2017,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:183964,loc:"Perris, CA",liftgate:true,ramp:false,fleet:false,price:26000,closed:"Oct 23, 2025"},
+  {lot:"2253A",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 103"H',miles:250113,loc:"Lake Worth, TX",liftgate:false,ramp:false,fleet:false,price:12000,closed:"Oct 29, 2025"},
+  {lot:"549b",year:2020,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 103"H',miles:153461,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Oct 15, 2025"},
+  {lot:"850",year:2019,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 103"H',miles:104006,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:17500,closed:"Oct 23, 2025"},
+  {lot:"696",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:175589,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:16000,closed:"Oct 16, 2025"},
+  {lot:"823",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:169995,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:27000,closed:"Oct 23, 2025"},
+  {lot:"802",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 102"H',miles:141933,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Oct 23, 2025"},
+  {lot:"836",year:2018,make:"International",model:"4300 SBA 4x2",body:'26 ft × 102"W × 97"H',miles:203699,loc:"Perris, CA",liftgate:true,ramp:false,fleet:false,price:16000,closed:"Oct 23, 2025"},
+  {lot:"2262",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:145831,loc:"Lake Worth, TX",liftgate:false,ramp:true,fleet:true,price:23500,closed:"Oct 29, 2025"},
+  {lot:"691",year:2020,make:"International",model:"MV 607 4x2",body:'26 ft × 102"W × 103"H',miles:184988,loc:"Chehalis, WA",liftgate:true,ramp:true,fleet:true,price:18000,closed:"Oct 16, 2025"},
+  {lot:"443",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 85"H',miles:221734,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:12000,closed:"Dec 10, 2025"},
+  {lot:"681",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 99"H',miles:192177,loc:"Chehalis, WA",liftgate:true,ramp:true,fleet:true,price:19000,closed:"Oct 16, 2025"},
+  {lot:"446",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:218791,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:false,price:21500,closed:"Dec 10, 2025"},
+  {lot:"327",year:2020,make:"International",model:"MV607 4x2",body:'28 ft × 102"W × 97"H',miles:223332,loc:"Odessa, MO",liftgate:true,ramp:true,fleet:false,price:13000,closed:"Oct 16, 2025"},
+  {lot:"695",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:172602,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:14000,closed:"Oct 16, 2025"},
+  {lot:"854",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 102"H',miles:166110,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Oct 23, 2025"},
+  {lot:"795",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:187086,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:15500,closed:"Oct 23, 2025"},
+  {lot:"540",year:2019,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 103"H',miles:56766,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:31000,closed:"Oct 15, 2025"},
+  {lot:"825",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:173800,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:17500,closed:"Oct 23, 2025"},
+  {lot:"692",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:189376,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:16500,closed:"Oct 16, 2025"},
+  {lot:"855",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:195739,loc:"Perris, CA",liftgate:true,ramp:true,fleet:true,price:24500,closed:"Oct 23, 2025"},
+  {lot:"552",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 85"H',miles:197344,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:23000,closed:"Oct 15, 2025"},
+  {lot:"2251",year:2018,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 96"W × 92"H',miles:197815,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:22000,closed:"Oct 29, 2025"},
+  {lot:"818",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 86"H',miles:195851,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:13500,closed:"Oct 23, 2025"},
+  {lot:"450",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:165862,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:false,price:16500,closed:"Dec 10, 2025"},
+  {lot:"812",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:130657,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:27000,closed:"Oct 23, 2025"},
+  {lot:"820",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 85"H',miles:236194,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:20000,closed:"Oct 23, 2025"},
+  {lot:"846",year:2023,make:"Hino",model:"L6 4x2",body:'28 ft × 102"W × 108"H',miles:236833,loc:"Perris, CA",liftgate:true,ramp:false,fleet:false,price:30000,closed:"Oct 23, 2025"},
+  {lot:"322",year:2021,make:"Mack",model:"MD 4x2",body:'24 ft × 102"W × 97"H',miles:81343,loc:"Odessa, MO",liftgate:true,ramp:false,fleet:false,price:28000,closed:"Oct 16, 2025"},
+  {lot:"817",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:130806,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:22000,closed:"Oct 23, 2025"},
+  {lot:"675",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:162669,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Oct 16, 2025"},
+  {lot:"858b",year:2016,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 97"H',miles:175437,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:12500,closed:"Oct 23, 2025"},
+  {lot:"806",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 106"H',miles:207433,loc:"Perris, CA",liftgate:true,ramp:false,fleet:false,price:17000,closed:"Oct 23, 2025"},
+  {lot:"328",year:2019,make:"International",model:"4300 4x2 Moving",body:'26 ft × 102"W × 96"H',miles:69405,loc:"Odessa, MO",liftgate:false,ramp:true,fleet:true,price:23000,closed:"Oct 16, 2025"},
+  {lot:"541",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:84196,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:32000,closed:"Oct 15, 2025"},
+  {lot:"325",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 102"H',miles:202021,loc:"Odessa, MO",liftgate:true,ramp:false,fleet:false,price:14000,closed:"Oct 16, 2025"},
+  {lot:"548b",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:107463,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Oct 15, 2025"},
+  {lot:"451",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:194793,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:16000,closed:"Dec 10, 2025"},
+  {lot:"818b",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 102"H',miles:134635,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:24500,closed:"Oct 23, 2025"},
+  {lot:"808",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:247477,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Oct 23, 2025"},
+  {lot:"820b",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 102"H',miles:162600,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:21500,closed:"Oct 23, 2025"},
+  {lot:"693",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:155696,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:false,price:15500,closed:"Oct 16, 2025"},
+  {lot:"830",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:226912,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:14500,closed:"Oct 23, 2025"},
+  {lot:"851b",year:2019,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 102"H',miles:120244,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Oct 23, 2025"},
+  {lot:"550c",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 82"H',miles:122511,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:27000,closed:"Oct 15, 2025"},
+  {lot:"685",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'20 ft × 102"W × 85"H',miles:247530,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:17500,closed:"Oct 16, 2025"},
+  {lot:"326",year:2020,make:"International",model:"MV607 4x2",body:'28 ft × 102"W × 97"H',miles:216430,loc:"Odessa, MO",liftgate:true,ramp:true,fleet:false,price:14000,closed:"Oct 16, 2025"},
+  {lot:"539",year:2020,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:166481,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:24500,closed:"Oct 15, 2025"},
+  {lot:"824",year:2020,make:"International",model:"MV607 SBA 4x2",body:'26 ft × 102"W × 103"H',miles:172116,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:17500,closed:"Oct 23, 2025"},
+  {lot:"829",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 96"H',miles:201410,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:15500,closed:"Oct 23, 2025"},
+  {lot:"2241",year:2019,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:209278,loc:"Lake Worth, TX",liftgate:false,ramp:false,fleet:false,price:17500,closed:"Oct 29, 2025"},
+  {lot:"793",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:176953,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:15000,closed:"Oct 23, 2025"},
+  {lot:"857",year:2016,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 97"H',miles:159125,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Oct 23, 2025"},
+  {lot:"674",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:134155,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Oct 16, 2025"},
+  {lot:"678",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:168386,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Oct 16, 2025"},
+  {lot:"848b",year:2016,make:"Hino",model:"338 4x2 Moving",body:'26 ft × 102"W × 103"H',miles:190906,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:12000,closed:"Oct 23, 2025"},
+  {lot:"2265",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 104"H',miles:207781,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:false,price:22000,closed:"Oct 29, 2025"},
+  {lot:"827",year:2020,make:"International",model:"MV607 SBA 4x2",body:'26 ft × 102"W × 102"H',miles:192660,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:16500,closed:"Oct 23, 2025"},
+  {lot:"684",year:2018,make:"Freightliner",model:"M2 106 6x4",body:'26 ft × 102"W × 98"H',miles:243247,loc:"Chehalis, WA",liftgate:false,ramp:true,fleet:true,price:21500,closed:"Oct 16, 2025"},
+  {lot:"835",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:200394,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Oct 23, 2025"},
+  {lot:"* Lot 852",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 96"H',miles:105120,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Oct 23, 2025"},
+  {lot:"822",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:168582,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:22000,closed:"Oct 23, 2025"},
+  {lot:"447",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:65820,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:30000,closed:"Dec 10, 2025"},
+  {lot:"848c",year:2016,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 103"H',miles:190906,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:12000,closed:"Oct 23, 2025"},
+  {lot:"827b",year:2020,make:"International",model:"MV607 SBA 4x2",body:'26 ft × 102"W × 102"H',miles:192660,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:16500,closed:"Oct 23, 2025"},
+  {lot:"792",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 102"H',miles:175518,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:19500,closed:"Oct 23, 2025"},
+  {lot:"807",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 98"H',miles:224313,loc:"Lebanon, TN",liftgate:true,ramp:false,fleet:false,price:24000,closed:"Oct 23, 2025"},
+  {lot:"546b",year:2019,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:163838,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:18000,closed:"Oct 15, 2025"},
+  {lot:"2252",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 96"W × 97"H',miles:220472,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:true,price:22500,closed:"Oct 29, 2025"},
+  {lot:"449",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 104"H',miles:159411,loc:"Phoenix, AZ",liftgate:false,ramp:false,fleet:true,price:25000,closed:"Dec 10, 2025"},
+  {lot:"832",year:2019,make:"International",model:"4300 SBA 4x2",body:'26 ft × 102"W × 103"H',miles:223708,loc:"Perris, CA",liftgate:true,ramp:false,fleet:false,price:14000,closed:"Oct 23, 2025"},
+  {lot:"791",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:165334,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:24500,closed:"Oct 23, 2025"},
+  {lot:"842",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 104"H',miles:167583,loc:"Lebanon, TN",liftgate:true,ramp:false,fleet:false,price:31000,closed:"Oct 23, 2025"},
+  {lot:"2242",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:244405,loc:"Lake Worth, TX",liftgate:true,ramp:true,fleet:false,price:22500,closed:"Oct 29, 2025"},
+  {lot:"16A",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:183154,loc:"Perris, CA",liftgate:true,ramp:false,fleet:false,price:12000,closed:"Oct 24, 2025"},
+  {lot:"543",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:204341,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:21500,closed:"Oct 15, 2025"},
+  {lot:"694",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:167858,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:15000,closed:"Oct 16, 2025"},
+  {lot:"852",year:2019,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 102"H',miles:198401,loc:"Lebanon, TN",liftgate:true,ramp:false,fleet:false,price:27000,closed:"Oct 23, 2025"},
+  {lot:"826",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 96"H',miles:176772,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:22500,closed:"Oct 23, 2025"},
+  {lot:"538",year:2020,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 98"H',miles:160713,loc:"Phoenix, AZ",liftgate:true,ramp:false,fleet:true,price:25000,closed:"Oct 15, 2025"},
+  {lot:"542",year:2019,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 103"H',miles:133171,loc:"Phoenix, AZ",liftgate:true,ramp:true,fleet:true,price:19000,closed:"Oct 15, 2025"},
+  {lot:"828",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:193790,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:18000,closed:"Oct 23, 2025"},
+  {lot:"2263",year:2019,make:"International",model:"4300 4x2",body:'24 ft × 96"W × 97"H',miles:166862,loc:"Lake Worth, TX",liftgate:false,ramp:false,fleet:true,price:14000,closed:"Oct 29, 2025"},
+  {lot:"683",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'28 ft × 102"W × 97"H',miles:180882,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:true,price:16000,closed:"Oct 16, 2025"},
+  {lot:"835b",year:2018,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:200394,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:21000,closed:"Oct 23, 2025"},
+  {lot:"849b",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 96"H',miles:80040,loc:"Perris, CA",liftgate:false,ramp:false,fleet:true,price:29000,closed:"Oct 23, 2025"},
+  {lot:"794",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:184846,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Oct 23, 2025"},
+  {lot:"821",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 85"H',miles:236292,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:12000,closed:"Oct 23, 2025"},
+  {lot:"796",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:199178,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:15000,closed:"Oct 23, 2025"},
+  {lot:"855b",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'Unknown',miles:230172,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:17500,closed:"Oct 23, 2025"},
+  {lot:"807b",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 96"W × 86"H',miles:232752,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:20000,closed:"Oct 23, 2025"},
+  {lot:"800",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:72645,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:30000,closed:"Oct 23, 2025"},
+  {lot:"821b",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 102"H',miles:164016,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:31000,closed:"Oct 23, 2025"},
+  {lot:"2252A",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'22 ft × 102"W × 96"H',miles:186861,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:false,price:12500,closed:"Oct 29, 2025"},
+  {lot:"819",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:148703,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:23500,closed:"Oct 23, 2025"},
+  {lot:"853c",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:134349,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:28000,closed:"Oct 23, 2025"},
+  {lot:"853d",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 97"H',miles:233786,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:18000,closed:"Oct 23, 2025"},
+  {lot:"833",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:250471,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:20500,closed:"Oct 23, 2025"},
+  {lot:"1298b",year:2018,make:"International",model:"4300 4x2",body:'25 ft × 97"W × 104"H',miles:137664,loc:"Morris, IL",liftgate:false,ramp:true,fleet:false,price:18000,closed:"Nov 12, 2025"},
+  {lot:"1273",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:235007,loc:"Morris, IL",liftgate:true,ramp:true,fleet:false,price:19000,closed:"Nov 12, 2025"},
+  {lot:"555",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:177965,loc:"Las Vegas, NV",liftgate:true,ramp:false,fleet:true,price:18500,closed:"Nov 25, 2025"},
+  {lot:"559",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:216647,loc:"Odessa, MO",liftgate:true,ramp:false,fleet:false,price:13000,closed:"Dec 11, 2025"},
+  {lot:"1284",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:252431,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:false,price:21500,closed:"Nov 12, 2025"},
+  {lot:"579",year:2020,make:"Hino",model:"268 4x2",body:'24 ft × 96"W × 91"H',miles:175531,loc:"Medford, MN",liftgate:false,ramp:false,fleet:false,price:14500,closed:"Dec 11, 2025"},
+  {lot:"553",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:164466,loc:"Las Vegas, NV",liftgate:false,ramp:false,fleet:false,price:22500,closed:"Nov 25, 2025"},
+  {lot:"1288b",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:168728,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:25000,closed:"Nov 12, 2025"},
+  {lot:"1289",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:242880,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:15500,closed:"Nov 12, 2025"},
+  {lot:"564",year:2020,make:"International",model:"MV607 4x2",body:'22 ft × 102"W × 97"H',miles:172133,loc:"Medford, MN",liftgate:false,ramp:true,fleet:false,price:14500,closed:"Dec 11, 2025"},
+  {lot:"1269",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:208215,loc:"Morris, IL",liftgate:true,ramp:false,fleet:true,price:20000,closed:"Nov 12, 2025"},
+  {lot:"1302",year:2017,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 101"H',miles:227513,loc:"South Vienna, OH",liftgate:true,ramp:true,fleet:false,price:15000,closed:"Nov 12, 2025"},
+  {lot:"566",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 102"H',miles:198954,loc:"Odessa, MO",liftgate:true,ramp:false,fleet:false,price:17500,closed:"Dec 11, 2025"},
+  {lot:"2063",year:2019,make:"International",model:"4300 SBA 4x2",body:'26 ft × 102"W × 105"H',miles:90027,loc:"Burgettstown, PA",liftgate:false,ramp:false,fleet:false,price:28000,closed:"Dec 17, 2025"},
+  {lot:"2040",year:2016,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 96"W × 91"H',miles:108604,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:13500,closed:"Dec 17, 2025"},
+  {lot:"1976",year:2020,make:"Hino",model:"268",body:'26 ft × 102"W × 103"H',miles:181619,loc:"North East, MD",liftgate:true,ramp:true,fleet:true,price:22000,closed:"Dec 17, 2025"},
+  {lot:"1029",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:228691,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:13500,closed:"Dec 15, 2025"},
+  {lot:"720b",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 103"H',miles:218606,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:false,price:18500,closed:"Dec 17, 2025"},
+  {lot:"1035",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:177493,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:26000,closed:"Dec 15, 2025"},
+  {lot:"1965",year:2020,make:"Hino",model:"338 4x2",body:'24 ft × 96"W × 97"H',miles:96508,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:13000,closed:"Dec 17, 2025"},
+  {lot:"1028",year:2018,make:"Hino",model:"258 4x2",body:'26 ft × 102"W × 103"H',miles:105656,loc:"South Vienna, OH",liftgate:true,ramp:false,fleet:false,price:26000,closed:"Dec 16, 2025"},
+  {lot:"1034",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 96"H',miles:175061,loc:"Lebanon, TN",liftgate:true,ramp:true,fleet:false,price:24500,closed:"Dec 15, 2025"},
+  {lot:"1998",year:2020,make:"Freightliner",model:"M2106 4x2",body:'26 ft × 102"W × 97"H',miles:126195,loc:"Butner, NC",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Dec 17, 2025"},
+  {lot:"2673",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'Unknown',miles:113631,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:false,price:17000,closed:"Dec 17, 2025"},
+  {lot:"1048",year:2022,make:"Ford",model:"F-650 XL 4x2",body:'25 ft × 102"W × 104"H',miles:196849,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:18000,closed:"Dec 16, 2025"},
+  {lot:"1027",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 94"H',miles:152048,loc:"Lebanon, TN",liftgate:true,ramp:false,fleet:false,price:26000,closed:"Dec 15, 2025"},
+  {lot:"701",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'20 ft × 96"W × 97"H',miles:228078,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:false,price:20000,closed:"Dec 17, 2025"},
+  {lot:"900b",year:2020,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:158053,loc:"Chehalis, WA",liftgate:true,ramp:false,fleet:false,price:16500,closed:"Dec 17, 2025"},
+  {lot:"2019",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 96"W × 102"H',miles:245182,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:16500,closed:"Dec 17, 2025"},
+  {lot:"1024",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:101258,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:31000,closed:"Dec 15, 2025"},
+  {lot:"1973",year:2017,make:"Hino",model:"338 4x2",body:'26 ft × 96"W × 93"H',miles:198151,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:12500,closed:"Dec 17, 2025"},
+  {lot:"1967",year:2020,make:"Hino",model:"338 4x2",body:'26 ft × 102"W × 102"H',miles:174073,loc:"Burgettstown, PA",liftgate:true,ramp:true,fleet:true,price:15500,closed:"Dec 17, 2025"},
+  {lot:"2008",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'20 ft × 96"W × 85"H',miles:163181,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:12000,closed:"Dec 17, 2025"},
+  {lot:"1032",year:2018,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 97"H',miles:155390,loc:"Newnan, GA",liftgate:true,ramp:false,fleet:false,price:24000,closed:"Dec 15, 2025"},
+  {lot:"702",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:230478,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:false,price:21000,closed:"Dec 17, 2025"},
+  {lot:"2667",year:2020,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 86"H',miles:134674,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:false,price:23500,closed:"Dec 17, 2025"},
+  {lot:"2684",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'22 ft × 102"W × 91"H',miles:219570,loc:"Lake Worth, TX",liftgate:true,ramp:false,fleet:false,price:23500,closed:"Dec 17, 2025"},
+  {lot:"1970",year:2019,make:"Hino",model:"268 4x2",body:'Unknown',miles:199868,loc:"Burgettstown, PA",liftgate:true,ramp:false,fleet:false,price:15500,closed:"Dec 17, 2025"},
+  {lot:"908",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:156497,loc:"Chehalis, WA",liftgate:true,ramp:true,fleet:true,price:26000,closed:"Dec 17, 2025"},
+  {lot:"717",year:2023,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 102"H',miles:243815,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:false,price:18500,closed:"Dec 17, 2025"},
+  {lot:"778",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 97"H',miles:229854,loc:"Perris, CA",liftgate:true,ramp:true,fleet:true,price:15000,closed:"Dec 18, 2025"},
+  {lot:"1989",year:2017,make:"Hino",model:"268 4x2",body:'26 ft × 96"W × 85"H',miles:244223,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:14500,closed:"Dec 17, 2025"},
+  {lot:"1956",year:2019,make:"Freightliner",model:"M2 106 6x4",body:'26 ft × 102"W × 96"H',miles:142006,loc:"North East, MD",liftgate:true,ramp:true,fleet:false,price:24000,closed:"Dec 17, 2025"},
+  {lot:"1008",year:2022,make:"Mack",model:"MD 4x2",body:'26 ft × 102"W × 109"H',miles:62364,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:26000,closed:"Dec 16, 2025"},
+  {lot:"* Lot 768",year:2017,make:"Freightliner",model:"M2 106 4x2",body:'24 ft × 102"W × 97"H',miles:131925,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:19500,closed:"Dec 18, 2025"},
+  {lot:"1073",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 98"H',miles:199852,loc:"Lebanon, TN",liftgate:true,ramp:true,fleet:false,price:17500,closed:"Dec 15, 2025"},
+  {lot:"2062",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 97"H',miles:90690,loc:"North East, MD",liftgate:false,ramp:false,fleet:true,price:14000,closed:"Dec 17, 2025"},
+  {lot:"724b",year:2020,make:"Hino",model:"268 4x2",body:'26 ft × 102"W × 103"H',miles:194003,loc:"Dunnigan, CA",liftgate:true,ramp:false,fleet:false,price:22000,closed:"Dec 17, 2025"},
+  {lot:"2012",year:2019,make:"Freightliner",model:"M2 106 4x2",body:'26 ft × 102"W × 103"H',miles:203051,loc:"North East, MD",liftgate:true,ramp:false,fleet:true,price:12500,closed:"Dec 17, 2025"},
+  {lot:"2066",year:2019,make:"International",model:"4300 4x2",body:'26 ft × 102"W × 96"H',miles:240048,loc:"North Franklin, CT",liftgate:true,ramp:false,fleet:false,price:15500,closed:"Dec 17, 2025"},
+  {lot:"761",year:2019,make:"Freightliner",model:"M2106 4x2",body:'24 ft × 102"W × 103"H',miles:175725,loc:"Perris, CA",liftgate:true,ramp:false,fleet:true,price:26000,closed:"Dec 18, 2025"},
+  {lot:"1990",year:2017,make:"Hino",model:"268 4x2",body:'24 ft × 102"W × 96"H',miles:246552,loc:"Charlotte, NC",liftgate:true,ramp:false,fleet:false,price:12500,closed:"Dec 17, 2025"},
+  {lot:"1063",year:2018,make:"Hino",model:"268 4x2",body:'26 ft × 96"W × 96"H',miles:229548,loc:"Lebanon, TN",liftgate:true,ramp:true,fleet:false,price:12500,closed:"Dec 15, 2025"},
+  {lot:"6186",year:2022,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:217003,loc:"Morris, IL",liftgate:true,ramp:false,fleet:false,price:19000,closed:"Feb 12, 2026"},
+  {lot:"2835",year:2020,make:"Freightliner",model:"M2 106 4x2",body:'Unknown',miles:179550,loc:"North East, MD",liftgate:true,ramp:false,fleet:false,price:12500,closed:"Feb 5, 2026"},
+  {lot:"3038A",year:2022,make:"International",model:"MV607 4x2",body:'26 ft × 102"W × 103"H',miles:153065,loc:"Humble, TX",liftgate:true,ramp:false,fleet:false,price:16000,closed:"Nov 5, 2025"},
+];
+
+// ── Scoring ───────────────────────────────────────────────
+// Weights: miles 35, year 15, volume 25 → base max 75 scaled to 80
+// Liftgate +12, Ramp +8, Fleet −10 → total range 0–100
+
+function parseVolume(body) {
+  const m = body.match(/(\d+)\s*ft\s*[×x]\s*(\d+)"W\s*[×x]\s*(\d+)"H/i);
+  if (!m) return null;
+  return parseFloat(m[1]) * (parseFloat(m[2]) / 12) * (parseFloat(m[3]) / 12);
+}
+
+const _volData   = raw.map(t => parseVolume(t.body)).filter(v => v !== null);
+const VOL_MIN    = Math.min(..._volData);
+const VOL_MAX    = Math.max(..._volData);
+const SCORE_YEAR_MIN  = Math.min(...raw.map(t => t.year));
+const SCORE_YEAR_MAX  = Math.max(...raw.map(t => t.year));
+const SCORE_MILES_MIN = Math.min(...raw.map(t => t.miles));
+const SCORE_MILES_MAX = Math.max(...raw.map(t => t.miles));
+
+function computeScore(t) {
+  const milesScore = 1 - (t.miles - SCORE_MILES_MIN) / (SCORE_MILES_MAX - SCORE_MILES_MIN);
+  const yearScore  = (t.year  - SCORE_YEAR_MIN)  / (SCORE_YEAR_MAX  - SCORE_YEAR_MIN);
+  const vol        = parseVolume(t.body);
+  const volScore   = vol !== null ? (vol - VOL_MIN) / (VOL_MAX - VOL_MIN) : 0;
+  const base       = (milesScore * 35 + yearScore * 15 + volScore * 25) * (80 / 75);
+  const bonus      = (t.liftgate ? 12 : 0) + (t.ramp ? 8 : 0) - (t.fleet ? 10 : 0);
+  return Math.max(0, Math.min(100, Math.round(base + bonus)));
+}
+// ─────────────────────────────────────────────────────────
+
+let sortCol = 7, sortAsc = true;
+let filtered = [...raw];
+
+function fmt(n) { return '$' + n.toLocaleString(); }
+
+function milesClass(m) {
+  if (m < 130000) return 'low';
+  if (m > 210000) return 'high';
+  return '';
+}
+
+function render() {
+  const tbody = document.getElementById('tbody');
+  const rows = filtered.sort((a, b) => {
+    const cols = [d=>d.lot, d=>d.year, d=>d.make, d=>d.body, d=>d.miles, d=>d.loc, d=>0, d=>d.price, d=>computeScore(d)];
+    let va = cols[sortCol](a), vb = cols[sortCol](b);
+    if (typeof va === 'string') va = va.toLowerCase(), vb = vb.toLowerCase();
+    return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+
+  tbody.innerHTML = rows.map(t => `
+    <tr>
+      <td><span class="lot">#${t.lot}</span></td>
+      <td>${t.year}</td>
+      <td><span class="make-badge make-${t.make}">${t.make}</span><br><span style="font-size:0.8rem;color:#6b7280">${t.model}</span></td>
+      <td style="font-size:0.82rem">${t.body}</td>
+      <td><span class="miles ${milesClass(t.miles)}">${t.miles.toLocaleString()}</span></td>
+      <td style="font-size:0.82rem">${t.loc}</td>
+      <td>
+        ${t.liftgate ? '<span class="tag liftgate">Liftgate</span>' : ''}
+        ${t.ramp ? '<span class="tag ramp">Ramp</span>' : ''}
+        ${t.fleet ? '<span class="tag fleet">Fleet</span>' : ''}
+      </td>
+      <td><span class="price">${fmt(t.price)}</span></td>
+      <td>${(() => { const s = computeScore(t); const c = s >= 70 ? 'score-high' : s >= 40 ? 'score-mid' : 'score-low'; return `<span class="score-badge ${c}" title="Miles: ${t.miles.toLocaleString()} · Year: ${t.year} · Vol: ${parseVolume(t.body) ? parseVolume(t.body).toFixed(0)+' cu ft' : 'Unknown'}">${s}</span>`; })()}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('rowCount').textContent = `${rows.length} trucks shown`;
+
+  const prices = rows.map(r => r.price);
+  const miles = rows.map(r => r.miles);
+  document.getElementById('s-count').textContent = rows.length;
+  document.getElementById('s-min').textContent = fmt(Math.min(...prices));
+  document.getElementById('s-max').textContent = fmt(Math.max(...prices));
+  document.getElementById('s-avg').textContent = fmt(Math.round(prices.reduce((a,b)=>a+b,0)/prices.length));
+  document.getElementById('s-miles').textContent = Math.round(miles.reduce((a,b)=>a+b,0)/miles.length).toLocaleString();
+
+  // update sorted header
+  document.querySelectorAll('thead th').forEach((th, i) => {
+    th.classList.toggle('sorted', i === sortCol);
+    const arr = th.querySelector('.arrow');
+    if (arr) arr.textContent = i === sortCol ? (sortAsc ? '↑' : '↓') : '↕';
+  });
+
+  updateCharts();
+}
+
+
+const PRICE_MIN = 12000;
+const PRICE_MAX = 33000;
+const MILES_MIN = 48349;
+const MILES_MAX = 253787;
+
+function fmt$(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtMi(n) { return Math.round(n).toLocaleString() + ' mi'; }
+
+function syncSlider(type) {
+  const lo = document.getElementById(type + 'Min');
+  const hi = document.getElementById(type + 'Max');
+  const fill = document.getElementById(type + 'TrackFill');
+  const wrap = document.getElementById(type + 'TrackWrap');
+  const label = document.getElementById(type + 'LabelVal');
+  const countEl = document.getElementById(type + 'Count');
+
+  let loVal = parseFloat(lo.value);
+  let hiVal = parseFloat(hi.value);
+  // Enforce cross-over constraint
+  if (loVal > hiVal) {
+    if (event && event.target === lo) loVal = hiVal, lo.value = loVal;
+    else hiVal = loVal, hi.value = hiVal;
+  }
+
+  const range = parseFloat(lo.max) - parseFloat(lo.min);
+  const leftPct  = (loVal - parseFloat(lo.min)) / range * 100;
+  const rightPct = (hiVal - parseFloat(lo.min)) / range * 100;
+  fill.style.left  = leftPct  + '%';
+  fill.style.width = (rightPct - leftPct) + '%';
+
+  if (type === 'price') {
+    label.textContent = fmt$(loVal) + ' – ' + fmt$(hiVal);
+  } else {
+    label.textContent = fmtMi(loVal) + ' – ' + fmtMi(hiVal);
+  }
+
+  // Count matching with current other filters
+  updateSliderCounts();
+  filterTable();
+}
+
+function updateSliderCounts() {
+  const pLo = parseFloat(document.getElementById('priceMin').value);
+  const pHi = parseFloat(document.getElementById('priceMax').value);
+  const mLo = parseFloat(document.getElementById('milesMin').value);
+  const mHi = parseFloat(document.getElementById('milesMax').value);
+
+  const pCount = raw.filter(t => t.price >= pLo && t.price <= pHi).length;
+  const mCount = raw.filter(t => t.miles >= mLo && t.miles <= mHi).length;
+
+  document.getElementById('priceCount').innerHTML =
+    '<strong>' + pCount + '</strong> of ' + raw.length + ' match this price range';
+  document.getElementById('milesCount').innerHTML =
+    '<strong>' + mCount + '</strong> of ' + raw.length + ' match this mileage range';
+}
+
+function initSliders() {
+  syncSlider('price');
+  syncSlider('miles');
+}
+
+function toggleMake(el) {
+  const make = el.dataset.make;
+  const allBtn = document.querySelector('.make-chip-all');
+
+  if (make === '') {
+    // "All Makes" clicked — deactivate all individual chips
+    document.querySelectorAll('.make-chip:not(.make-chip-all)').forEach(c => c.classList.remove('active'));
+    allBtn.classList.add('active');
+  } else {
+    // Toggle this chip
+    el.classList.toggle('active');
+    // If none selected, re-activate All
+    const anyActive = [...document.querySelectorAll('.make-chip:not(.make-chip-all)')].some(c => c.classList.contains('active'));
+    allBtn.classList.toggle('active', !anyActive);
+  }
+  filterTable();
+}
+
+function getSelectedMakes() {
+  const allActive = document.querySelector('.make-chip-all').classList.contains('active');
+  if (allActive) return null; // no filter
+  return [...document.querySelectorAll('.make-chip:not(.make-chip-all).active')].map(c => c.dataset.make);
+}
+
+function filterTable() {
+  const q     = document.getElementById('search').value.toLowerCase();
+  const makes = getSelectedMakes();
+  const pLo   = parseFloat(document.getElementById('priceMin').value);
+  const pHi   = parseFloat(document.getElementById('priceMax').value);
+  const mLo   = parseFloat(document.getElementById('milesMin').value);
+  const mHi   = parseFloat(document.getElementById('milesMax').value);
+
+  filtered = raw.filter(t => {
+    const text = `${t.lot} ${t.make} ${t.model} ${t.loc}`.toLowerCase();
+    if (q && !text.includes(q)) return false;
+    if (makes && !makes.includes(t.make)) return false;
+    if (t.price < pLo || t.price > pHi) return false;
+    if (t.miles < mLo || t.miles > mHi) return false;
+    return true;
+  });
+  render();
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = col === 7 ? true : true; }
+  render();
+}
+
+// ── Charts (pure canvas — no external dependencies) ──────
+
+const MAKE_COLORS = {
+  'Freightliner': '#1e40af',
+  'Hino':         '#9d174d',
+  'International':'#065f46',
+  'Ford':         '#4c1d95',
+  'Mack':         '#991b1b',
+  'Peterbilt':    '#14532d',
+};
+
+function _setupCanvas(id, w, h) {
+  const canvas = document.getElementById(id);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+
+function _niceMax(val, steps) {
+  const raw = val / steps;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  return Math.ceil(val / (mag * steps)) * mag * steps;
+}
+
+// Vertical bar chart
+function drawVBars(id, { labels, values, colors, yFmt, valFmt }) {
+  const el = document.getElementById(id);
+  const W = el.parentElement.clientWidth - 2;
+  const H = 240;
+  const { ctx } = _setupCanvas(id, W, H);
+  const PAD = { t: 28, r: 16, b: 52, l: 62 };
+  const pw = W - PAD.l - PAD.r;
+  const ph = H - PAD.t - PAD.b;
+
+  const valid = values.filter(v => v != null && v > 0);
+  if (!valid.length) return;
+  const maxV = _niceMax(Math.max(...valid), 5);
+  const TICKS = 5;
+
+  // Grid + y-axis labels
+  ctx.font = "11px 'DM Sans',sans-serif";
+  for (let i = 0; i <= TICKS; i++) {
+    const val = (maxV / TICKS) * i;
+    const y   = PAD.t + ph - (i / TICKS) * ph;
+    ctx.strokeStyle = '#e8e0d4'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + pw, y); ctx.stroke();
+    ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(yFmt(val), PAD.l - 6, y);
+  }
+
+  const n     = labels.length;
+  const slotW = pw / n;
+  const barW  = Math.min(slotW * 0.65, 52);
+
+  labels.forEach((lbl, i) => {
+    if (values[i] == null) return;
+    const barH = (values[i] / maxV) * ph;
+    const x = PAD.l + i * slotW + (slotW - barW) / 2;
+    const y = PAD.t + ph - barH;
+    const r = 4;
+
+    ctx.fillStyle = Array.isArray(colors) ? colors[i] : colors;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + barW - r, y); ctx.arcTo(x + barW, y, x + barW, y + r, r);
+    ctx.lineTo(x + barW, y + barH); ctx.lineTo(x, y + barH);
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath(); ctx.fill();
+
+    // Value above bar
+    if (valFmt && values[i]) {
+      ctx.fillStyle = '#374151'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.font = "10px 'DM Sans',sans-serif";
+      ctx.fillText(valFmt(values[i]), x + barW / 2, y - 3);
+    }
+
+    // X-axis label (supports \n for two lines)
+    ctx.fillStyle = '#6b7280'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.font = "11px 'DM Sans',sans-serif";
+    String(lbl).split('\n').forEach((p, pi) =>
+      ctx.fillText(p, x + barW / 2, PAD.t + ph + 8 + pi * 13)
+    );
+  });
+}
+
+// Horizontal bar chart
+function drawHBars(id, { labels, values, colors, xFmt, valFmt }) {
+  const el = document.getElementById(id);
+  const W  = el.parentElement.clientWidth - 2;
+  const validN = values.filter(v => v != null).length;
+  const H  = Math.max(120, validN * 38 + 50);
+  const { ctx } = _setupCanvas(id, W, H);
+  const PAD = { t: 10, r: 72, b: 32, l: 136 };
+  const pw = W - PAD.l - PAD.r;
+  const ph = H - PAD.t - PAD.b;
+
+  const valid = values.filter(v => v != null);
+  if (!valid.length) return;
+  const maxV = _niceMax(Math.max(...valid), 4);
+  const TICKS = 4;
+
+  // Grid + x-axis labels
+  ctx.font = "11px 'DM Sans',sans-serif";
+  for (let i = 0; i <= TICKS; i++) {
+    const val = (maxV / TICKS) * i;
+    const x   = PAD.l + (i / TICKS) * pw;
+    ctx.strokeStyle = '#e8e0d4'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + ph); ctx.stroke();
+    ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(xFmt(val), x, PAD.t + ph + 5);
+  }
+
+  // Filter out null entries
+  const fL = [], fV = [], fC = [];
+  labels.forEach((l, i) => { if (values[i] != null) { fL.push(l); fV.push(values[i]); fC.push(colors[i]); } });
+
+  const rowH = ph / fL.length;
+  const barH = Math.min(26, rowH * 0.65);
+
+  fL.forEach((lbl, i) => {
+    const y    = PAD.t + i * rowH + (rowH - barH) / 2;
+    const barW = (fV[i] / maxV) * pw;
+    const r = 3;
+
+    ctx.fillStyle = '#374151'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.font = "12px 'DM Sans',sans-serif";
+    ctx.fillText(lbl, PAD.l - 8, y + barH / 2);
+
+    ctx.fillStyle = fC[i];
+    ctx.beginPath();
+    ctx.moveTo(PAD.l, y + r); ctx.lineTo(PAD.l, y + barH - r);
+    ctx.arcTo(PAD.l, y + barH, PAD.l + r, y + barH, r);
+    ctx.lineTo(PAD.l + barW - r, y + barH);
+    ctx.arcTo(PAD.l + barW, y + barH, PAD.l + barW, y + barH - r, r);
+    ctx.lineTo(PAD.l + barW, y + r);
+    ctx.arcTo(PAD.l + barW, y, PAD.l + barW - r, y, r);
+    ctx.lineTo(PAD.l + r, y); ctx.arcTo(PAD.l, y, PAD.l, y + r, r);
+    ctx.closePath(); ctx.fill();
+
+    ctx.fillStyle = '#374151'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.font = "11px 'DM Sans',sans-serif";
+    ctx.fillText(valFmt ? valFmt(fV[i]) : fV[i], PAD.l + barW + 6, y + barH / 2);
+  });
+}
+
+function updateCharts() {
+  updateYearChart();
+  updateHistChart();
+  updateMakeChart();
+}
+
+function updateYearChart() {
+  const allYears = [...new Set(raw.map(t => t.year))].sort();
+  const labels = [], values = [], colors = [];
+  allYears.forEach((yr, i) => {
+    const group = filtered.filter(t => t.year === yr);
+    const pct = allYears.length <= 1 ? 1 : i / (allYears.length - 1);
+    labels.push(`${yr}\n(${group.length})`);
+    values.push(group.length ? Math.round(group.reduce((a, t) => a + t.price, 0) / group.length) : null);
+    colors.push(`rgba(${Math.round(13+pct*188)},${Math.round(27+pct*31)},${Math.round(42+pct*53)},0.85)`);
+  });
+  drawVBars('yearChart', { labels, values, colors,
+    yFmt: v => '$' + (v/1000).toFixed(0) + 'k',
+    valFmt: v => '$' + (v/1000).toFixed(0) + 'k' });
+}
+
+function updateHistChart() {
+  const bucketSize = 2000;
+  const labels = [], values = [];
+  for (let p = PRICE_MIN; p < PRICE_MAX; p += bucketSize) {
+    labels.push('$' + (p/1000).toFixed(0) + 'k');
+    values.push(filtered.filter(t => t.price >= p && t.price < p + bucketSize).length);
+  }
+  labels.push('$' + (PRICE_MAX/1000).toFixed(0) + 'k');
+  values.push(filtered.filter(t => t.price >= PRICE_MAX).length);
+  drawVBars('histChart', { labels, values, colors: '#c9a84c',
+    yFmt: v => Math.round(v) || '',
+    valFmt: v => v > 0 ? v : '' });
+}
+
+function updateMakeChart() {
+  const allMakes = ['Freightliner','Hino','International','Ford','Mack','Peterbilt'];
+  const labels = [], values = [], colors = [];
+  allMakes.forEach(m => {
+    const group = filtered.filter(t => t.make === m);
+    labels.push(group.length ? `${m} (${group.length})` : m);
+    values.push(group.length ? Math.round(group.reduce((a, t) => a + t.price, 0) / group.length) : null);
+    colors.push((MAKE_COLORS[m] || '#888') + 'cc');
+  });
+  drawHBars('makeChart', { labels, values, colors,
+    xFmt: v => '$' + (v/1000).toFixed(0) + 'k',
+    valFmt: v => '$' + (v/1000).toFixed(0) + 'k' });
+}
+
+// ─────────────────────────────────────────────────────────
+
+initSliders();
+let _resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(updateCharts, 150); });
+</script>
+</body>
+</html>
